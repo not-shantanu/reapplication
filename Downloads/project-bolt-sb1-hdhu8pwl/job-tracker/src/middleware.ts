@@ -1,54 +1,54 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
-  // Public routes that don't require authentication
-  const publicRoutes = ['/auth/login', '/auth/register', '/auth/forgot-password']
-  if (publicRoutes.includes(req.nextUrl.pathname)) {
-    if (session) {
-      // If user is signed in, redirect to dashboard
-      return NextResponse.redirect(new URL('/dashboard', req.url))
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name: string, options: CookieOptions) {
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+        },
+      },
     }
-    return res
+  );
+
+  const { data: { session } } = await supabase.auth.getSession();
+
+  // If user is signed in and the current path is /auth/* redirect the user to /dashboard
+  if (session && request.nextUrl.pathname.startsWith('/auth')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // Protected routes
-  if (
-    req.nextUrl.pathname.startsWith('/dashboard') ||
-    req.nextUrl.pathname.startsWith('/applications') ||
-    req.nextUrl.pathname.startsWith('/profile')
-  ) {
-    if (!session) {
-      // If user is not signed in, redirect to login
-      return NextResponse.redirect(new URL('/auth/login', req.url))
-    }
-    return res
+  // If user is not signed in and the current path is not /auth/* redirect the user to /auth/login
+  if (!session && !request.nextUrl.pathname.startsWith('/auth')) {
+    return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  // Root route
-  if (req.nextUrl.pathname === '/') {
-    if (session) {
-      return NextResponse.redirect(new URL('/dashboard', req.url))
-    }
-    return NextResponse.redirect(new URL('/auth/login', req.url))
-  }
-
-  return res
+  return response;
 }
 
 export const config = {
-  matcher: [
-    '/',
-    '/auth/:path*',
-    '/dashboard/:path*',
-    '/applications/:path*',
-    '/profile/:path*',
-  ],
-} 
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+}; 

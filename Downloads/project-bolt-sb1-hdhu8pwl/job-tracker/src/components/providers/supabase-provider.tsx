@@ -1,24 +1,46 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import { createContext, useContext, useEffect, useState } from 'react';
 
-const Context = createContext<any>(undefined);
+const SupabaseContext = createContext<ReturnType<typeof createBrowserClient> | undefined>(undefined);
+
+export const useSupabase = () => {
+  const context = useContext(SupabaseContext);
+  if (!context) {
+    throw new Error('useSupabase must be used within a SupabaseProvider');
+  }
+  return context;
+};
 
 export default function SupabaseProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [supabase] = useState(() => createClientComponentClient());
+  const [supabase] = useState(() => {
+    try {
+      return createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+    } catch (error) {
+      console.error('Error initializing Supabase client:', error);
+      return undefined;
+    }
+  });
+
   const router = useRouter();
 
   useEffect(() => {
+    if (!supabase) return;
+
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      router.refresh();
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') router.refresh();
+      if (event === 'SIGNED_OUT') router.refresh();
     });
 
     return () => {
@@ -26,17 +48,13 @@ export default function SupabaseProvider({
     };
   }, [router, supabase]);
 
-  return (
-    <Context.Provider value={{ supabase }}>
-      {children}
-    </Context.Provider>
-  );
-}
-
-export const useSupabase = () => {
-  const context = useContext(Context);
-  if (context === undefined) {
-    throw new Error('useSupabase must be used inside SupabaseProvider');
+  if (!supabase) {
+    return <div>Error initializing Supabase client. Check your environment variables.</div>;
   }
-  return context;
-}; 
+
+  return (
+    <SupabaseContext.Provider value={supabase}>
+      {children}
+    </SupabaseContext.Provider>
+  );
+} 

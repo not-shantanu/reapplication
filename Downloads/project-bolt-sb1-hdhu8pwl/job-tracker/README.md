@@ -1,14 +1,43 @@
-# Reapplication - Job Application Tracker
+# Job Tracker
 
-A modern web application built with Next.js, Supabase, and Tailwind CSS to help job seekers track their job applications efficiently.
+A modern web application for tracking job applications and managing your job search process.
 
 ## Features
 
-- User authentication with email/password
-- Dashboard with application statistics
-- Track job applications with status updates
-- Modern, responsive UI with dark mode support
+- User authentication with email verification
+- Job application tracking
+- Modern UI with Tailwind CSS
 - Secure data storage with Supabase
+
+## Environment Variables
+
+Create a `.env.local` file with the following variables:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+RESEND_API_KEY=your_resend_api_key
+ENCRYPTION_KEY=your_encryption_key
+NEXT_PUBLIC_APP_URL=http://localhost:3000 # Change this in production
+```
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+```
+
+## Deployment
+
+This project is deployed on Netlify. Make sure to:
+1. Set up all environment variables in Netlify dashboard
+2. Configure build settings
+3. Update redirect rules for authentication
 
 ## Tech Stack
 
@@ -16,7 +45,7 @@ A modern web application built with Next.js, Supabase, and Tailwind CSS to help 
 - **Styling**: Tailwind CSS, ShadcnUI
 - **Backend**: Supabase (Authentication, Database)
 - **State Management**: React Hooks
-- **Deployment**: Vercel (recommended)
+- **Deployment**: Netlify (recommended)
 
 ## Getting Started
 
