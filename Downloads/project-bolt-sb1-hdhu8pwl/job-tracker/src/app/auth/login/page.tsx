@@ -1,83 +1,96 @@
-'use client';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import LoginForm from './login-form';
 
-import { useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+/**
+ * Server-side login page component
+ * Handles initial authentication state and renders the login form
+ */
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: { error?: string; message?: string; redirectTo?: string };
+}) {
+  // Initialize Supabase client
+  const supabase = createServerComponentClient({ cookies });
 
-export default function Login() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-  const supabase = createClientComponentClient();
+  // Check if user is already authenticated
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const handleGoogleLogin = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      console.log('Starting Google sign in...');
+  // If user is already logged in, redirect to dashboard
+  if (session) {
+    redirect('/dashboard');
+  }
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
-      });
-
-      if (error) {
-        console.error('Google sign in error:', error);
-        setError('An error occurred during sign in. Please try again.');
-        return;
-      }
-
-      console.log('Google sign in successful:', data);
-    } catch (err) {
-      console.error('Unexpected error:', err);
-      setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Extract error information from URL parameters
+  const error = searchParams?.error;
+  const errorMessage = searchParams?.message || getErrorMessage(error);
+  const redirectTo = searchParams?.redirectTo || '/dashboard';
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Welcome to Job Tracker
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in with your Google account to continue
-          </p>
-        </div>
+    <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <h1 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+          Welcome Back
+        </h1>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Sign in to continue to your dashboard
+        </p>
+      </div>
 
-        {error && (
-          <div className="rounded-md bg-red-50 p-4">
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
+          {/* Display error message if present */}
+          {errorMessage && (
+            <div className="mb-4 rounded-md bg-red-50 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">
+                    {errorMessage}
+                  </h3>
+                </div>
+              </div>
+            </div>
+          )}
 
-        <div className="mt-8 space-y-6">
-          <button
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="group relative flex w-full justify-center items-center gap-3 rounded-md bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Image
-              src="/google.svg"
-              alt="Google logo"
-              width={20}
-              height={20}
-              className="h-5 w-5"
-            />
-            {loading ? 'Signing in...' : 'Continue with Google'}
-          </button>
+          {/* Login form component */}
+          <LoginForm redirectTo={redirectTo} />
         </div>
       </div>
     </div>
   );
+}
+
+/**
+ * Helper function to get user-friendly error messages
+ */
+function getErrorMessage(error?: string): string {
+  switch (error) {
+    case 'no_code':
+      return 'Authentication code missing. Please try again.';
+    case 'auth':
+      return 'Authentication failed. Please try again.';
+    case 'no_session':
+      return 'Unable to create session. Please try again.';
+    case 'unknown':
+      return 'An unexpected error occurred. Please try again.';
+    default:
+      return '';
+  }
 } 

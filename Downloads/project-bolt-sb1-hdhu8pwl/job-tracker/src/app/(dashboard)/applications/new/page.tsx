@@ -29,21 +29,30 @@ export default function NewApplication() {
         user_id: session.user.id,
         company_name: formData.get('company_name'),
         job_title: formData.get('job_title'),
-        location: formData.get('location'),
-        salary_range: formData.get('salary_range'),
-        status: formData.get('status'),
-        job_description: formData.get('job_description'),
-        application_url: formData.get('application_url'),
-        recruiter_email: formData.get('recruiter_email'),
-        notes: formData.get('notes'),
+        location: formData.get('location') || null,
+        salary_range: formData.get('salary_range') || null,
+        status: 'Applied', // Default status
+        job_description: formData.get('job_description') || null,
+        application_url: formData.get('application_url') || null,
+        recruiter_email: formData.get('recruiter_email') || null,
+        notes: formData.get('notes') || null,
         applied_at: new Date().toISOString(),
       };
+
+      // Validate required fields
+      if (!applicationData.company_name || !applicationData.job_title) {
+        setError('Company name and job title are required.');
+        return;
+      }
 
       const { error: insertError } = await supabase
         .from('applications')
         .insert([applicationData]);
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Error inserting application:', insertError);
+        throw new Error('Failed to create application');
+      }
       
       router.push('/applications');
       router.refresh();
@@ -70,6 +79,12 @@ export default function NewApplication() {
           </button>
         </div>
 
+        {error && (
+          <div className="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -78,7 +93,7 @@ export default function NewApplication() {
                   htmlFor="company_name"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
-                  Company Name
+                  Company Name *
                 </label>
                 <input
                   type="text"
@@ -94,7 +109,7 @@ export default function NewApplication() {
                   htmlFor="job_title"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
-                  Job Title
+                  Job Title *
                 </label>
                 <input
                   type="text"
@@ -147,11 +162,7 @@ export default function NewApplication() {
                   name="recruiter_email"
                   id="recruiter_email"
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="recruiter@company.com"
                 />
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Email address where you'll receive updates about this application
-                </p>
               </div>
 
               <div>
@@ -166,32 +177,7 @@ export default function NewApplication() {
                   name="application_url"
                   id="application_url"
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="https://company.com/careers/position"
                 />
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Link to the job posting or application portal
-                </p>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="status"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Status
-                </label>
-                <select
-                  name="status"
-                  id="status"
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="Applied">Applied</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Interview Scheduled">Interview Scheduled</option>
-                  <option value="Offered">Offered</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
               </div>
             </div>
 
@@ -220,38 +206,37 @@ export default function NewApplication() {
               <textarea
                 name="notes"
                 id="notes"
-                rows={3}
+                rows={4}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
-          </div>
 
-          {error && (
-            <div className="rounded-md bg-red-50 dark:bg-red-900/50 p-4">
-              <p className="text-sm text-red-700 dark:text-red-200">{error}</p>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className={cn(
+                  "inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
+                  loading && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create Application'
+                )}
+              </button>
             </div>
-          )}
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={loading}
-              className={cn(
-                "inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white",
-                "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
-                "dark:focus:ring-offset-gray-900",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create Application'
-              )}
-            </button>
           </div>
         </form>
       </div>
