@@ -16,13 +16,9 @@ export default function DashboardLayout({
   const supabase = createClientComponentClient()
 
   const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut()
-      router.push('/auth/login')
-      router.refresh()
-    } catch (error) {
-      console.error('Error signing out:', error)
-    }
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
   }
 
   const navigation = [
@@ -33,14 +29,14 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      <nav className="bg-white dark:bg-gray-800 shadow">
+      <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
                 <Link
                   href="/dashboard"
-                  className="text-xl font-bold text-gray-900 dark:text-white"
+                  className="text-xl font-bold text-gray-800 dark:text-white"
                 >
                   Job Tracker
                 </Link>
@@ -50,7 +46,7 @@ export default function DashboardLayout({
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                    className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                   >
                     {item.name}
                   </Link>
@@ -59,41 +55,41 @@ export default function DashboardLayout({
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:items-center">
               <div className="ml-3 relative">
-                <button
-                  type="button"
-                  className="bg-white dark:bg-gray-800 p-1 rounded-full text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-900"
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                >
-                  <span className="sr-only">Open user menu</span>
-                  <svg
-                    className="h-8 w-8"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                <div>
+                  <button
+                    type="button"
+                    className="bg-white dark:bg-gray-800 rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </button>
-
+                    <span className="sr-only">Open user menu</span>
+                    <div className="h-8 w-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                      <svg
+                        className="h-5 w-5 text-gray-600 dark:text-gray-300"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                    </div>
+                  </button>
+                </div>
                 {isUserMenuOpen && (
                   <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 focus:outline-none">
                     <Link
                       href="/profile"
                       className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-                      onClick={() => setIsUserMenuOpen(false)}
                     >
                       Your Profile
                     </Link>
                     <button
-                      onClick={() => {
-                        setIsUserMenuOpen(false)
-                        handleSignOut()
-                      }}
+                      onClick={handleSignOut}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
                       Sign out
@@ -104,27 +100,24 @@ export default function DashboardLayout({
             </div>
             <div className="-mr-2 flex items-center sm:hidden">
               <button
-                onClick={() => setIsOpen(!isOpen)}
                 type="button"
                 className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-                aria-controls="mobile-menu"
-                aria-expanded="false"
+                onClick={() => setIsOpen(!isOpen)}
               >
                 <span className="sr-only">Open main menu</span>
-                {!isOpen ? (
+                {isOpen ? (
                   <svg
                     className="block h-6 w-6"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
-                    aria-hidden="true"
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M4 6h16M4 12h16M4 18h16"
+                      d="M6 18L18 6M6 6l12 12"
                     />
                   </svg>
                 ) : (
@@ -134,13 +127,12 @@ export default function DashboardLayout({
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
-                    aria-hidden="true"
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
+                      d="M4 6h16M4 12h16M4 18h16"
                     />
                   </svg>
                 )}
@@ -149,6 +141,7 @@ export default function DashboardLayout({
           </div>
         </div>
 
+        {/* Mobile menu */}
         {isOpen && (
           <div className="sm:hidden">
             <div className="pt-2 pb-3 space-y-1">
@@ -157,7 +150,6 @@ export default function DashboardLayout({
                   key={item.name}
                   href={item.href}
                   className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
-                  onClick={() => setIsOpen(false)}
                 >
                   {item.name}
                 </Link>
@@ -168,15 +160,11 @@ export default function DashboardLayout({
                 <Link
                   href="/profile"
                   className="block px-4 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-                  onClick={() => setIsOpen(false)}
                 >
                   Your Profile
                 </Link>
                 <button
-                  onClick={() => {
-                    setIsOpen(false)
-                    handleSignOut()
-                  }}
+                  onClick={handleSignOut}
                   className="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   Sign out

@@ -56,19 +56,40 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/auth/login?error=no_session`);
     }
 
-    // Log successful authentication
-    console.log('Successfully authenticated user:', session.user.email);
-
-    // Set the auth cookie
-    const { data: { user } } = await supabase.auth.getUser();
+    // Verify session token is valid
+    const { data: { user: sessionUser }, error: sessionUserError } = await supabase.auth.getUser(session.access_token);
     
-    if (user) {
-      // Redirect to dashboard on success
-      return NextResponse.redirect(`${origin}/dashboard`);
-    } else {
-      // If no user is found, redirect to login
-      return NextResponse.redirect(`${origin}/auth/login?error=no_user`);
+    if (sessionUserError || !sessionUser) {
+      console.error('Invalid session token:', sessionUserError);
+      return NextResponse.redirect(`${origin}/auth/login?error=invalid_token`);
     }
+
+    // Verify user exists and has valid email
+    if (!sessionUser.email || !sessionUser.email.endsWith('@gmail.com')) {
+      console.error('Invalid email domain - only Gmail allowed:', sessionUser.email);
+      await supabase.auth.signOut();
+      return NextResponse.redirect(`${origin}/auth/login?error=invalid_email`);
+    }
+
+    // Verify user has necessary claims/roles
+    if (sessionUser.role !== 'authenticated') {
+      console.error('User missing required role');
+      await supabase.auth.signOut();
+      return NextResponse.redirect(`${origin}/auth/login?error=unauthorized`);
+    }
+
+    // Double check user exists in auth system
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.error('Failed to verify user:', userError);
+      return NextResponse.redirect(`${origin}/auth/login?error=verification_failed`);
+    }
+
+    // All checks passed, redirect to dashboard
+    console.log('Successfully authenticated user:', user.email);
+    return NextResponse.redirect(`${origin}/dashboard`);
+
   } catch (error) {
     // Handle unexpected errors
     console.error('Unexpected error in callback:', error);
